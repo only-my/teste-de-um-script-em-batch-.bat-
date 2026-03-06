@@ -11,7 +11,7 @@ set BASE=D:\setup\
 set ADB=%BASE%\adb\
 set SYSTEM=%BASE%\sistemas\
 set STOCK=%SYSTEM%\stock\
-set TWRP=%BASE%\twrp
+set RECOVERYS=%BASE%\recoverys
 set CUSTOM=D:\setup\sistemas\custom\
 
 :: menu inicial
@@ -202,31 +202,64 @@ set pasta=0
 pause
 goto main
 
+:: CUSTOM ROMS
 :ROMS
+cls
+echo ================================
+echo   Instalador de Custom ROM
+echo ================================
+
+set /a count=0
+for /d %%i in (%CUSTOM%*) do (
+    set /a count+=1
+    echo [!count!] %%~nxi
+    set "opcao2[!count!]=%%i"
+)
+
+echo [0] Sair
+echo.
+set /p escolha2=Selecione uma opcao: 
+
+if "%escolha2%"=="0" goto main
+
+if defined opcao2[%escolha2%] (
+    set "pasta2=!opcao2[%escolha2%]!"
+    goto instalar_custom
+) else (
+    echo Opcao invalida!
+    pause
+    goto ROMS
+)
+
+:instalar_custom
 echo Você selecionou a Custom ROM "%pasta2%"
 cd /d "%pasta2%"
 
-echo Procurando arquivo .zip da ROM...
-set "romzip="
+:: arquivos essenciais para dar boot
+if exist "%pasta2%\boot.img" %ADB%\fastboot flash boot "%pasta2%\boot.img"
+if exist "%pasta2%\dtbo.img" %ADB%\fastboot flash dtbo "%pasta2%\dtbo.img"
+if exist "%pasta2%\vendor_boot.img" %ADB%\fastboot flash vendor_boot "%pasta2%\vendor_boot.img"
 
+echo 50%% da instalação concluída.
+echo Agora reinicie no modo recovery e entre em sideload para continuar.
+pause
+
+:: seleção do arquivo .zip da ROM
+set "romzip="
 set /a count=0
 for %%f in (*.zip) do (
     set /a count+=1
     echo [!count!] %%f
     set "zipopcao[!count!]=%%f"
 )
-
 if %count%==0 (
     echo Nenhum arquivo .zip encontrado em "%pasta2%"
     pause
     goto main
 )
-
 echo [0] Cancelar
 set /p escolhazip=Selecione o arquivo .zip: 
-
 if "%escolhazip%"=="0" goto main
-
 if defined zipopcao[%escolhazip%] (
     set "romzip=!zipopcao[%escolhazip%]!"
 ) else (
@@ -236,16 +269,7 @@ if defined zipopcao[%escolhazip%] (
 )
 
 echo Arquivo de ROM selecionado: "%romzip%"
-echo esperando confirmação do usuario para instalar a rom..
 pause
-
-%ADB%\fastboot flash boot boot.img
-%ADB%\fastboot flash dtbo dtbo.img
-%ADB%\fastboot flash vendor_boot vendor_boot.img
-
-echo 50%% parte da instalação concluída, inicie no modo recovery e entre no sideload para continuar
-pause
-
 %ADB%\adb sideload "%romzip%"
 
 pause
@@ -254,3 +278,10 @@ goto main
 
 :RECOVERYS
 
+:main
+cls
+echo         menu de recoverys
+
+
+
+echo 0 - Sair
